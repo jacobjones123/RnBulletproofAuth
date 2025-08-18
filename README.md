@@ -1,97 +1,264 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# RnBulletproofAuth
 
-# Getting Started
+A minimal React Native 0.80 app using a Bulletproof-React-style structure:
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+- Clean sign-in screen
+- React Navigation native stack
+- React Query for data fetching
+- Simple Node/Express backend (Docker-ready)
+- Detox E2E tests with testIDs and helper modules
 
-## Step 1: Start Metro
+---
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+## Requirements
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+### OS / Tooling
 
-```sh
-# Using npm
-npm start
+- macOS (for iOS builds)
+- Xcode **15+**
+- iOS Simulator **iOS 17+**
+- Android Studio (optional for Android)
+- CocoaPods **1.15+**
+- Watchman (optional but recommended)
 
-# OR using Yarn
-yarn start
+### Runtime
+
+- Node.js **18 LTS or 20 LTS** (recommended: **20.x**)
+- npm **10+** (or yarn / pnpm if you prefer)
+- Ruby **3.2+** (system Ruby often works; if you manage Ruby explicitly, use 3.2 or 3.3)
+  - `gem install cocoapods` (Pods 1.15+)
+
+Optional version pins:
+
+```
+# .nvmrc
+20
+
+# .ruby-version
+3.3.0
 ```
 
-## Step 2: Build and run your app
+---
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
+## Project Structure
 
-### Android
-
-```sh
-# Using npm
-npm run android
-
-# OR using Yarn
-yarn android
+```
+.
+├── App.tsx
+├── index.js
+├── src
+│   ├── navigation/
+│   │   └── root-navigator.tsx
+│   ├── providers/
+│   │   └── query-client.ts
+│   ├── screens/
+│   │   └── HomeScreen.tsx
+│   ├── features/
+│   │   └── auth/
+│   │       ├── api/login.ts
+│   │       ├── components/SignInForm.tsx
+│   │       ├── hooks/useAuth.ts
+│   │       ├── screens/SignInScreen.tsx
+│   │       ├── storage/auth-storage.ts
+│   │       └── types.ts
+│   ├── shared/
+│   │   ├── constants/testIDs.ts
+│   │   ├── lib/{env.ts, fetcher.ts}
+│   │   └── ui/{Button.tsx, Input.tsx}
+│   └── test-utils/e2e/
+│       ├── helpers/{selectors.ts, actions.ts, assertions.ts}
+│       └── tests/auth.e2e.ts
+├── backend/  (separate repo or sibling folder if you cloned the zip)
+├── ios/
+├── android/
+├── .detoxrc.js
+├── e2e.jest.config.js
+├── babel.config.js
+├── tsconfig.json
+└── package.json
 ```
 
-### iOS
+---
 
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
+## Setup
 
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
+Install dependencies:
 
-```sh
-bundle install
+```bash
+npm install
 ```
 
-Then, and every time you update your native dependencies, run:
+iOS pods:
 
-```sh
-bundle exec pod install
+```bash
+npx pod-install ios
 ```
 
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
+Ensure **babel.config.js** is minimal:
 
-```sh
-# Using npm
+```js
+module.exports = {
+  presets: ['@react-native/babel-preset'],
+};
+```
+
+If you prefer the Metro preset:
+
+```js
+module.exports = {
+  presets: ['module:metro-react-native-babel-preset'],
+};
+```
+
+Avoid adding `transform-react-jsx-self/source` plugins.  
+Also make sure your app **package.json** does **not** set `"type": "module"`.
+
+---
+
+## Running the Backend (Docker)
+
+Use the provided backend (Express + TS) we generated:
+
+```bash
+# from backend folder (with docker-compose.yaml)
+docker compose up -d
+# health check
+curl http://localhost:4000/health
+```
+
+- iOS simulator base URL: `http://localhost:4000`
+- Android emulator base URL: `http://10.0.2.2:4000`
+
+This is already handled in `src/shared/lib/env.ts`.
+
+---
+
+## Run the App
+
+iOS:
+
+```bash
 npm run ios
-
-# OR using Yarn
-yarn ios
 ```
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+Android:
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+```bash
+npm run android
+```
 
-## Step 3: Modify your app
+Common iOS build gotcha: in Xcode → Target → Build Phases → **Bundle React Native code and images**, add:
 
-Now that you have successfully run the app, let's make changes!
+```sh
+export NODE_BINARY="$(which node)"
+```
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
+---
 
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
+## E2E Tests (Detox 20+)
 
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
+Install dev deps:
 
-## Congratulations! :tada:
+```bash
+npm i -D detox jest @types/jest ts-jest
+brew tap wix/brew && brew install applesimutils   # macOS only
+```
 
-You've successfully run and modified your React Native App. :partying_face:
+**.detoxrc.js** (new schema):
 
-### Now what?
+```js
+/** @type {Detox.DetoxConfig} */
+module.exports = {
+  testRunner: {
+    args: {
+      config: 'e2e.jest.config.js',
+      _: ['src/test-utils/e2e/tests'],
+    },
+    jest: { setupTimeout: 120000 },
+  },
+  apps: {
+    'ios.debug': {
+      type: 'ios.app',
+      binaryPath:
+        'ios/build/Build/Products/Debug-iphonesimulator/RnBulletproofAuth.app',
+      build:
+        'RCT_NEW_ARCH_ENABLED=0 xcodebuild -workspace ios/RnBulletproofAuth.xcworkspace -scheme RnBulletproofAuth -configuration Debug -sdk iphonesimulator -derivedDataPath ios/build',
+    },
+    'ios.release': {
+      type: 'ios.app',
+      binaryPath:
+        'ios/build/Build/Products/Release-iphonesimulator/RnBulletproofAuth.app',
+      build:
+        'RCT_NEW_ARCH_ENABLED=0 xcodebuild -workspace ios/RnBulletproofAuth.xcworkspace -scheme RnBulletproofAuth -configuration Release -sdk iphonesimulator -derivedDataPath ios/build',
+    },
+  },
+  devices: {
+    simulator: { type: 'ios.simulator', device: { type: 'iPhone 15' } },
+  },
+  configurations: {
+    'ios.sim.debug': { device: 'simulator', app: 'ios.debug' },
+    'ios.sim.release': { device: 'simulator', app: 'ios.release' },
+  },
+};
+```
 
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
+**e2e.jest.config.js**:
 
-# Troubleshooting
+```js
+module.exports = {
+  rootDir: '.',
+  testMatch: ['<rootDir>/src/test-utils/e2e/tests/**/*.ts'],
+  testTimeout: 180000,
+  maxWorkers: 1,
 
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
+  globalSetup: 'detox/runners/jest/globalSetup',
+  globalTeardown: 'detox/runners/jest/globalTeardown',
+  reporters: ['detox/runners/jest/reporter'],
+  testEnvironment: 'detox/runners/jest/testEnvironment',
 
-# Learn More
+  transform: { '^.+.tsx?$': 'ts-jest' },
+  verbose: true,
+};
+```
 
-To learn more about React Native, take a look at the following resources:
+Build & test:
 
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+```bash
+npx detox build -c ios.sim.debug
+npx detox test  -c ios.sim.debug
+# release (optional)
+npx detox build -c ios.sim.release
+npx detox test  -c ios.sim.release
+```
+
+---
+
+## Useful Scripts
+
+Add to `package.json`:
+
+```json
+{
+  "scripts": {
+    "start:reset": "react-native start --reset-cache",
+    "clean:ios": "watchman watch-del-all || true && rm -rf node_modules ios/Pods ios/Podfile.lock ios/build ~/Library/Developer/Xcode/DerivedData && npm install && npx pod-install ios",
+    "e2e:ios:build:debug": "detox build -c ios.sim.debug",
+    "e2e:ios:test:debug": "detox test -c ios.sim.debug",
+    "e2e:ios:build:release": "detox build -c ios.sim.release",
+    "e2e:ios:test:release": "detox test -c ios.sim.release",
+    "backend:up": "docker compose -f backend/docker-compose.yaml up -d",
+    "backend:down": "docker compose -f backend/docker-compose.yaml down"
+  }
+}
+```
+
+---
+
+## Troubleshooting
+
+- **Duplicate `__self`/`__source`** → remove legacy JSX transform plugins; use only RN/Metro preset.
+- **Could not connect to server** on iOS → ensure Docker maps `-p 4000:4000` and server listens on `0.0.0.0`.
+- **Bundle React Native code and images failed** → set `NODE_BINARY` and clear caches (`npm run clean:ios`).
+- **Keyboard hides button in E2E** → use `tapReturnKey()` on last field or tap a root view with `testID`.
+
+---

@@ -1,7 +1,7 @@
 // simple home after login
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { testIDs } from '../../../shared/constants/testIDs';
+import { testIDs } from '../shared/constants/testIDs';
 
 export const HomeScreen: React.FC = () => {
   return (
