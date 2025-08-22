@@ -68,7 +68,7 @@ Optional version pins:
 │   └── test-utils/e2e/
 │       ├── helpers/{selectors.ts, actions.ts, assertions.ts}
 │       └── tests/auth.e2e.ts
-├── backend/  (separate repo or sibling folder if you cloned the zip)
+├── backend/
 ├── ios/
 ├── android/
 ├── .detoxrc.js
@@ -101,17 +101,6 @@ module.exports = {
   presets: ['@react-native/babel-preset'],
 };
 ```
-
-If you prefer the Metro preset:
-
-```js
-module.exports = {
-  presets: ['module:metro-react-native-babel-preset'],
-};
-```
-
-Avoid adding `transform-react-jsx-self/source` plugins.  
-Also make sure your app **package.json** does **not** set `"type": "module"`.
 
 ---
 
@@ -240,7 +229,7 @@ Add to `package.json`:
 ```json
 {
   "scripts": {
-    "start:reset": "react-native start --reset-cache",
+    "start:clean": "react-native start --reset-cache",
     "clean:ios": "watchman watch-del-all || true && rm -rf node_modules ios/Pods ios/Podfile.lock ios/build ~/Library/Developer/Xcode/DerivedData && npm install && npx pod-install ios",
     "e2e:ios:build:debug": "detox build -c ios.sim.debug",
     "e2e:ios:test:debug": "detox test -c ios.sim.debug",
